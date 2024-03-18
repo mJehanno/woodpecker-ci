@@ -17,29 +17,15 @@ import (
 )
 
 type PipelineFileInput struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Path    string `json:"path"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Content string `json:"content"`
 }
 
-func lintFile(filepath string) error {
+func lintFile(filepath, rawConfig string) error {
 	logger := logger.GetLogger()
 	output := termenv.NewOutput(os.Stdout)
-
-	logger.Info("opening file")
-	fi, err := os.Open(filepath)
-	if err != nil {
-		return err
-	}
-	defer fi.Close()
-
-	logger.Info("reading file")
-	buf, err := os.ReadFile(filepath)
-	if err != nil {
-		return err
-	}
-
-	rawConfig := string(buf)
 
 	logger.Info("parsing file")
 	c, err := yaml.ParseString(rawConfig)
@@ -106,7 +92,7 @@ func Upload(c echo.Context) error {
 		return c.String(http.StatusBadRequest, errors.New("need to provide an yaml file").Error())
 	}
 
-	if err = lintFile(input.Path); err != nil {
+	if err = lintFile(input.Path, input.Content); err != nil {
 		logger.WithError(err).Error("file is not a valid woodpecker pipeline")
 		return c.String(http.StatusBadRequest, err.Error())
 	}

@@ -41,25 +41,23 @@ export function App() {
 
   const handleUpload = async (data:any) => {
     console.group("handleUpload")
-
+    const content = await data.file.text()
     const postData = {
       name: data.file.name,
       path: data.file.path,
       type: data.file.type,
+      content: content 
     }
-    console.log(data.file.name)
-    console.log(data.file.path)
-    console.log(data.file.type)
     console.log(postData)
+
     try {
-      console.log("trying to upload file")
       const result = await ddClient.extension.vm?.service?.post("/api/upload", postData)
       setResponse(JSON.stringify(result))
-      // display docker toast
+      ddClient.desktopUI.toast.success(`${postData.name} file uploaded`);
       // recall get pipeline endpoint (should also be called onMounted)
     } catch (error) {
-      console.log("catched error")
       console.error(error)
+      ddClient.desktopUI.toast.error(`failed to upload ${postData.name}`);
       setResponse(JSON.stringify(error))
     }
     console.groupEnd()
