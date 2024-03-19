@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"net"
-	"net/http"
 	"os"
 	"woodpecker-ci/db"
 	"woodpecker-ci/handlers"
@@ -58,12 +57,4 @@ func main() {
 
 func listen(path string) (net.Listener, error) {
 	return net.Listen("unix", path)
-}
-
-func hello(ctx echo.Context) error {
-	return ctx.JSON(http.StatusOK, HTTPMessageBody{Message: "hello"})
-}
-
-type HTTPMessageBody struct {
-	Message string
 }
