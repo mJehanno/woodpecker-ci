@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { createDockerDesktopClient } from '@docker/extension-api-client';
 import { Stack, TextField, Typography } from '@mui/material';
 import { useForm } from "react-hook-form";
+import { pipeline } from './models/pipeline';
 
 const client = createDockerDesktopClient();
 
@@ -28,6 +29,20 @@ export function App() {
   const { setValue, handleSubmit } = useForm();
   const [response, setResponse] = React.useState<string>();
   const ddClient = useDockerDesktopClient();
+  const [pipelines, setPipelines] = React.useState<pipeline[]>([])
+
+  useEffect(() => {
+    getPipelines()
+  }, [response, setValue])
+
+  const getPipelines = async() => {
+    console.group("getPipelines")
+    ddClient.extension.vm?.service?.get("/api/pipeline").then((x: unknown) => {
+    console.log(x)
+    setPipelines(x as pipeline[])
+    console.groupEnd()
+    })
+  }
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     console.group("handleChange")
@@ -63,10 +78,6 @@ export function App() {
     console.groupEnd()
   }
 
-  const fetchAndDisplayResponse = async () => {
-    const result = await ddClient.extension.vm?.service?.get('/hello');
-    setResponse(JSON.stringify(result));
-  };
 
   return (
     <>
@@ -79,10 +90,6 @@ export function App() {
           Upload file
           <VisuallyHiddenInput type="file" onChange={handleChange}/>
         </Button>
-        <Button variant="contained" onClick={fetchAndDisplayResponse}>
-          Call backend
-        </Button>
-
         <TextField
           label="Backend response"
           sx={{ width: 480 }}

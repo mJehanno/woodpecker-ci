@@ -5,6 +5,8 @@ import (
 	_ "embed"
 
 	"github.com/doug-martin/goqu/v9"
+	_ "github.com/doug-martin/goqu/v9/dialect/sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var Conn *goqu.Database
@@ -28,7 +30,12 @@ func GetConnection() (*goqu.Database, error) {
 }
 
 func CreateDB() error {
-	_, err := Conn.Exec(schema)
+	con, err := GetConnection()
+	if err != nil {
+		return err
+	}
+
+	_, err = con.Exec(schema)
 	if err != nil {
 		return err
 	}

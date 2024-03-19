@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"woodpecker-ci/db"
 	"woodpecker-ci/handlers"
 	"woodpecker-ci/logger"
 
@@ -21,6 +22,11 @@ func main() {
 	_ = os.RemoveAll(socketPath)
 
 	logger := logger.GetLogger()
+
+	err := db.CreateDB()
+	if err != nil {
+		logger.WithError(err).Fatal("failed to create database")
+	}
 
 	logMiddleware := middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Skipper: middleware.DefaultSkipper,
@@ -45,7 +51,7 @@ func main() {
 	router.Listener = ln
 
 	router.POST("/api/upload", handlers.Upload)
-	router.GET("/hello", hello)
+	router.GET("/api/pipeline", handlers.GetPipeline)
 
 	logger.Fatal(router.Start(startURL))
 }

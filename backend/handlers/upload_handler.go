@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 	"woodpecker-ci/logger"
+	"woodpecker-ci/pipeline"
 
 	"github.com/labstack/echo"
 	"github.com/muesli/termenv"
@@ -17,8 +18,7 @@ import (
 )
 
 type PipelineFileInput struct {
-	Path    string `json:"path"`
-	Name    string `json:"name"`
+	pipeline.File
 	Type    string `json:"type"`
 	Content string `json:"content"`
 }
