@@ -23,6 +23,12 @@ type PipelineFileInput struct {
 	Content string `json:"content"`
 }
 
+func (p PipelineFileInput) ToDbModel() pipeline.Pipeline {
+	return pipeline.Pipeline{
+		File: p.File,
+	}
+}
+
 func lintFile(filepath, rawConfig string) error {
 	logger := logger.GetLogger()
 	output := termenv.NewOutput(os.Stdout)
@@ -95,6 +101,11 @@ func Upload(c echo.Context) error {
 	if err = lintFile(input.Path, input.Content); err != nil {
 		logger.WithError(err).Error("file is not a valid woodpecker pipeline")
 		return c.String(http.StatusBadRequest, err.Error())
+	}
+
+	err = pipeline.SavePipeline(c.Request().Context(), input.ToDbModel())
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, input)

@@ -18,7 +18,15 @@ type Pipeline struct {
 	Status string `json:"status" db:"status"`
 }
 
-func SavePipeline() {
+func SavePipeline(ctx context.Context, p Pipeline) error {
+	p.Status = "none"
+	m := db.Conn.Insert("pipeline").Rows(
+		p,
+	).Executor()
+
+	_, err := m.ExecContext(ctx)
+
+	return err
 }
 
 func UpdatePipeline() {}
