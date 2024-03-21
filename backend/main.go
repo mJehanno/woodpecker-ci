@@ -51,6 +51,7 @@ func main() {
 
 	router.POST("/api/upload", handlers.Upload)
 	router.GET("/api/pipeline", handlers.GetPipeline)
+	router.POST("/api/pipeline/lint", handlers.LintPipeline)
 
 	logger.Fatal(router.Start(startURL))
 }

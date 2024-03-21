@@ -2,20 +2,13 @@ import React, { useEffect } from 'react';
 import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import { createDockerDesktopClient } from '@docker/extension-api-client';
-import { Stack, TextField, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 import { useForm } from "react-hook-form";
 import { pipeline } from './models/pipeline';
+import { PipelineTable } from './components/pipeline-table';
+import { useDockerDesktopClient } from './common/docker-client';
 
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
 
-const client = createDockerDesktopClient();
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -29,19 +22,16 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
-function useDockerDesktopClient() {
-  return client;
-}
 
 export function App() {
   const { setValue, handleSubmit } = useForm();
-  const [response, setResponse] = React.useState<string>();
   const ddClient = useDockerDesktopClient();
-  const [pipelines, setPipelines] = React.useState<pipeline[]>([])
+  const [pipelines, setPipelines] = React.useState<pipeline[]>([]);
+  const [upload, setUpload] = React.useState<boolean>(false)
 
   useEffect(() => {
     getPipelines()
-  }, [response, setValue])
+  }, [setValue, setPipelines, upload])
 
   const getPipelines = async() => {
     console.group("getPipelines")
@@ -62,6 +52,8 @@ export function App() {
     console.groupEnd()
   }
 
+  
+
   const handleUpload = async (data:any) => {
     console.group("handleUpload")
     const content = await data.file.text()
@@ -75,14 +67,13 @@ export function App() {
 
     try {
       const result = await ddClient.extension.vm?.service?.post("/api/upload", postData)
-      setResponse(JSON.stringify(result))
       ddClient.desktopUI.toast.success(`${postData.name} file uploaded`);
       // recall get pipeline endpoint (should also be called onMounted)
     } catch (error) {
       console.error(error)
       ddClient.desktopUI.toast.error(`failed to upload ${postData.name}`);
-      setResponse(JSON.stringify(error))
     }
+    setUpload(true)
     console.groupEnd()
   }
 
@@ -98,40 +89,9 @@ export function App() {
           Upload file
           <VisuallyHiddenInput type="file" onChange={handleChange}/>
         </Button>
-        <TextField
-          label="Backend response"
-          sx={{ width: 480 }}
-          disabled
-          multiline
-          variant="outlined"
-          minRows={5}
-          value={response ?? ''}
-        />
       </Stack>
-
-  <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 650 }} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell align="right">Name</TableCell>
-            <TableCell align="right">Status</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {pipelines.map((row) => (
-            <TableRow
-              key={row.id}
-              sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-            >
-              <TableCell align="right">{row.name}</TableCell>
-              <TableCell align="right">{row.status}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-
-
+      <PipelineTable pipelines={pipelines} />
     </>
   );
 }
+
