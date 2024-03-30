@@ -8,7 +8,6 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { pipeline } from '../models/pipeline';
 import { useDockerDesktopClient } from '../common/docker-client';
-import { callLinter } from '../common/pipeline-linter';
 
 
 export function PipelineTable({pipelines}: {pipelines: pipeline[]}) {
@@ -16,26 +15,43 @@ export function PipelineTable({pipelines}: {pipelines: pipeline[]}) {
     const ddClient = useDockerDesktopClient();
     const handleStartPipeline = async (pip: pipeline) => {
         console.group("handlestartPipeline")
-        // lint file
-        try {
-            callLinter(ddClient, pip.path, pip.name);
-        } catch(error) {
-            return;
+        const repoPath = pip.path.replace(pip.name, "");
+        const arrPath =  repoPath.split("/")
+        const repoName = arrPath[arrPath.length -2]
+        const basePath = "/home/woody/repos/"
+
+        console.dir({ repoPath, repoName, basePath})
+
+        console.log("copying repo inside container")
+        //copy repo to container
+        await ddClient.docker.cli.exec("cp", [
+          repoPath,
+          "mjehanno_woodpecker-ci-desktop-extension-service:"+basePath
+        ])
+
+        const postData = {
+          file: basePath + repoName  +"/woodpecker.yaml",
+          path: basePath + repoName ,
+          config:{
+            workspace_base: basePath + repoName,
+            workspace_path: repoName, 
+            secrets: {},
+            env: [],
+            priviliged: [
+              "plugins/docker", "plugins/gcr", "plugins/ecr", "woodpeckerci/plugin-docker-buildx", "codeberg.org/woodpecker-plugins/docker-buildx"
+            ]
+          }
         }
 
-        //spanw server
-        // spawn agent
+        console.log("triggering the pipeline")
+        //start pipeline
         try {
-            const output = await ddClient.docker.cli.exec("run", [
-                "-e WOODPECKER_SERVER=localhost:9000",
-                `-e WOODPECKER_AGENT_SECRET="a_secret_not_so_secret_yet"`,
-                "-e WOODPECKER_MAX_WORKFLOWS=4",
-                "woodpeckerci/woodpecker-agent"
-            ]);
-            console.log(output);
-            console.error(output.stderr);
-        } catch (error) {
-            console.log(error);
+          await ddClient.extension.vm?.service?.post("/api/pipeline/start", postData);
+          console.log("pipeline started")
+        }catch(error) {
+          console.error("failed to start pipeline:")
+          console.error(error)
+          ddClient.desktopUI.toast.error(`failed to start pipeline: ${error}`)
         }
 
         console.groupEnd();
@@ -60,10 +76,10 @@ export function PipelineTable({pipelines}: {pipelines: pipeline[]}) {
               key={row.id}
               sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
             >
-              <TableCell>{row.name}</TableCell>
+              <TableCell>{row.path}</TableCell>
               <TableCell>{row.status}</TableCell>
               <TableCell>
-                <PlayCircleIcon onClick={() => handleStartPipeline(row)} />
+                <PlayCircleIcon style={{cursor: "pointer"}} onClick={() => handleStartPipeline(row)} />
               </TableCell>
             </TableRow>
           ))}

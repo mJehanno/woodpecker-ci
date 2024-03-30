@@ -27,11 +27,11 @@ export function App() {
   const { setValue, handleSubmit } = useForm();
   const ddClient = useDockerDesktopClient();
   const [pipelines, setPipelines] = React.useState<pipeline[]>([]);
-  const [upload, setUpload] = React.useState<boolean>(false)
+  const [upload, setUpload] = React.useState<boolean>(false);
 
   useEffect(() => {
     getPipelines()
-  }, [setValue, setPipelines, upload])
+  }, [setPipelines, upload])
 
   const getPipelines = async() => {
     console.group("getPipelines")
@@ -66,14 +66,14 @@ export function App() {
     console.log(postData)
 
     try {
-      const result = await ddClient.extension.vm?.service?.post("/api/upload", postData)
+      await ddClient.extension.vm?.service?.post("/api/upload", postData)
       ddClient.desktopUI.toast.success(`${postData.name} file uploaded`);
-      // recall get pipeline endpoint (should also be called onMounted)
+      setUpload(true)
     } catch (error) {
       console.error(error)
       ddClient.desktopUI.toast.error(`failed to upload ${postData.name}`);
     }
-    setUpload(true)
+    setValue("file", null);
     console.groupEnd()
   }
 
@@ -87,7 +87,7 @@ export function App() {
       <Stack direction="row" alignItems="start" spacing={2} sx={{ mt: 4 }}>
         <Button component="label" role={undefined} variant="contained" tabIndex={-1} startIcon={<CloudUploadIcon />}>
           Upload file
-          <VisuallyHiddenInput type="file" onChange={handleChange}/>
+          <VisuallyHiddenInput type="file" onChange={ (e) => {handleChange(e); e.target.value=""}}/>
         </Button>
       </Stack>
       <PipelineTable pipelines={pipelines} />

@@ -5,6 +5,8 @@ import (
 	"woodpecker-ci/db"
 
 	"github.com/doug-martin/goqu/v9"
+	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml"
+	"go.woodpecker-ci.org/woodpecker/v2/pipeline/frontend/yaml/types"
 )
 
 type File struct {
@@ -27,6 +29,10 @@ func SavePipeline(ctx context.Context, p Pipeline) error {
 	_, err := m.ExecContext(ctx)
 
 	return err
+}
+
+func ParsePipeline(content string) (*types.Workflow, error) {
+	return yaml.ParseString(content)
 }
 
 func UpdatePipeline() {}

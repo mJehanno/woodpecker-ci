@@ -22,7 +22,12 @@ func main() {
 
 	logger := logger.GetLogger()
 
-	err := db.CreateDB()
+	err := os.MkdirAll("/home/woody/repos", 0755)
+	if err != nil {
+		logger.WithError(err).Fatal("failed to create dest repository folder")
+	}
+
+	err = db.CreateDB()
 	if err != nil {
 		logger.WithError(err).Fatal("failed to create database")
 	}
@@ -52,6 +57,8 @@ func main() {
 	router.POST("/api/upload", handlers.Upload)
 	router.GET("/api/pipeline", handlers.GetPipeline)
 	router.POST("/api/pipeline/lint", handlers.LintPipeline)
+	router.POST("/api/pipeline/start", handlers.StartPipeline)
+	router.GET("/ws", handlers.Tracer)
 
 	logger.Fatal(router.Start(startURL))
 }
