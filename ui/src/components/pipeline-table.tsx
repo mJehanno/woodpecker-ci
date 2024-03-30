@@ -50,7 +50,7 @@ export function PipelineTable() {
     onError: (error) => {
       console.error("failed to start pipeline:")
       console.error(error)
-      ddClient.desktopUI.toast.error(`failed to start pipeline: ${error}`)
+      ddClient.desktopUI.toast.error(`failed to start pipeline: ${error.message}`)
     }
   })
 
@@ -79,25 +79,29 @@ export function PipelineTable() {
 
       console.log("copying repo inside container")
       //copy repo to container
-      copyRepoMutation.mutate({repoPath, basePath})
-
-      const postData = {
-        file: basePath + repoName  +"/woodpecker.yaml",
-        path: basePath + repoName ,
-        config:{
-          workspace_base: basePath + repoName,
-          workspace_path: repoName, 
-          secrets: {},
-          env: [],
-          privileged: [
-            "plugins/docker", "plugins/gcr", "plugins/ecr", "woodpeckerci/plugin-docker-buildx", "codeberg.org/woodpecker-plugins/docker-buildx"
-          ]
+      try {
+        await copyRepoMutation.mutateAsync({repoPath, basePath})
+      } catch (error) {
+        console.error(error) 
+      } finally {
+        const postData = {
+          file: basePath + repoName  +"/woodpecker.yaml",
+          path: basePath + repoName ,
+          config:{
+            workspace_base: basePath + repoName,
+            workspace_path: repoName, 
+            secrets: {},
+            env: [],
+            privileged: [
+              "plugins/docker", "plugins/gcr", "plugins/ecr", "woodpeckerci/plugin-docker-buildx", "codeberg.org/woodpecker-plugins/docker-buildx"
+            ]
+          }
         }
-      }
 
-      console.log("triggering the pipeline")
-      startPipelineMutation.mutate(postData);
-      console.groupEnd();
+        console.log("triggering the pipeline")
+        startPipelineMutation.mutate(postData);
+        console.groupEnd();
+      }
   }
 
     return (
